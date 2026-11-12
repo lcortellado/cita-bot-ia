@@ -1,0 +1,12 @@
+package-lock.json
+
+# Legacy JavaScript: replaced file by file during the TypeScript migration.
+/agente.js
+/cerebro.js
+/agenda.js
+/simular.js
+/probar.js
+
+# Prompt content: formatting changes would change what the model reads.
+negocio.md
+LEEME.md

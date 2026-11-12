@@ -1,13 +1,31 @@
 {
-  "name": "agente-whatsapp",
+  "name": "cita-bot",
   "version": "1.0.0",
-  "description": "Agente de IA en WhatsApp en 8 pasos: webhook de Meta, OpenRouter, memoria, ficha del negocio, Cal.com y pruebas. Guía: anderbriz.com/guia-whatsapp",
+  "description": "WhatsApp AI agent that answers customers and books appointments.",
   "type": "module",
   "private": true,
-  "engines": { "node": ">=20.6" },
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
     "start": "node --env-file=.env agente.js",
     "simular": "node --env-file=.env simular.js",
-    "probar": "node --env-file=.env probar.js"
+    "probar": "node --env-file=.env probar.js",
+    "typecheck": "tsc",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.30.0",
+    "@types/node": "^22.15.0",
+    "eslint": "^9.30.0",
+    "eslint-config-prettier": "^10.1.5",
+    "prettier": "^3.6.0",
+    "typescript": "^5.9.2",
+    "typescript-eslint": "^8.35.0",
+    "vitest": "^3.2.4"
   }
 }
