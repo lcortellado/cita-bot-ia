@@ -11,7 +11,7 @@ Guía completa, paso a paso: https://www.tiktok.com/@anderbriz
 - `probar.js`: la batería de pruebas que intenta romper el agente
 
 ## Ejecutar (Node 22 o 24)
-1. Copia `.env.ejemplo` a `.env` y complétalo (para el simulador solo necesitas la OPENROUTER_API_KEY)
+1. Copia `.env.example` a `.env` y complétalo (para el simulador solo necesitas la OPENROUTER_API_KEY)
 2. `npm run simular`   conversa en la terminal
 3. `npm run probar`    corre la batería de pruebas
 4. `npm start`         enciende el servidor del webhook (puerto 3000)
