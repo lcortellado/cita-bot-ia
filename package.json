@@ -8,9 +8,11 @@
     "node": ">=22"
   },
   "scripts": {
-    "start": "node --env-file=.env agente.js",
-    "simular": "node --env-file=.env simular.js",
-    "probar": "node --env-file=.env probar.js",
+    "dev": "tsx watch --env-file=.env src/server.ts",
+    "build": "tsc -p tsconfig.build.json",
+    "start": "node --env-file=.env dist/server.js",
+    "simulate": "tsx --env-file=.env src/scripts/simulate-conversation.ts",
+    "eval": "tsx --env-file=.env src/scripts/run-agent-evals.ts",
     "typecheck": "tsc",
     "lint": "eslint .",
     "format": "prettier --write .",
@@ -24,6 +26,7 @@
     "eslint": "^9.30.0",
     "eslint-config-prettier": "^10.1.5",
     "prettier": "^3.6.0",
+    "tsx": "^4.20.0",
     "typescript": "^5.9.2",
     "typescript-eslint": "^8.35.0",
     "vitest": "^3.2.4"
