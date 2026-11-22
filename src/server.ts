@@ -17,7 +17,7 @@ for (const [name, value] of Object.entries(REQUIRED_WHATSAPP_SETTINGS)) {
 }
 if (!env.whatsapp.appSecret) {
   console.warn(
-    '⚠ WHATSAPP_APP_SECRET is not set: webhook signatures are NOT verified (required in production)',
+    '⚠ WHATSAPP_APP_SECRET is not set: webhook signatures are NOT verified (only allowed outside production)',
   );
 }
 
