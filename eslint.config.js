@@ -5,7 +5,7 @@ import tseslint from 'typescript-eslint';
 
 export default defineConfig(
   {
-    // Legacy JavaScript is linted only after it is migrated to TypeScript (removed in the last migration task).
+    // Root *.js is tooling config only (eslint.config.js); application code is TypeScript in src/.
     ignores: ['node_modules/', 'dist/', 'coverage/', '*.js'],
   },
   js.configs.recommended,
@@ -23,6 +23,8 @@ export default defineConfig(
         'error',
         { selector: 'default', format: ['camelCase'] },
         { selector: 'import', format: null },
+        // `_name` marks a parameter that is intentionally unused.
+        { selector: 'parameter', format: ['camelCase'], leadingUnderscore: 'allow' },
         { selector: 'variable', format: ['camelCase', 'UPPER_CASE'] },
         {
           selector: 'variable',
