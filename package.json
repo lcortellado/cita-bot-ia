@@ -21,6 +21,7 @@
     "test:watch": "vitest"
   },
   "dependencies": {
+    "fastify": "^5.12.8",
     "zod": "^4.1.0"
   },
   "devDependencies": {

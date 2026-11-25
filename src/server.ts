@@ -1,10 +1,5 @@
-import { createServer } from 'node:http';
+import { buildApp } from './app.js';
 import { calendarName } from './modules/bookings/booking.service.js';
-import {
-  handleWebhookEvent,
-  handleWebhookVerification,
-  WEBHOOK_PATH,
-} from './modules/whatsapp/whatsapp.routes.js';
 import { env } from './shared/config/env.js';
 
 const REQUIRED_WHATSAPP_SETTINGS = {
@@ -21,18 +16,12 @@ if (!env.whatsapp.appSecret) {
   );
 }
 
-createServer((request, response) => {
-  const url = new URL(request.url ?? '/', `http://${request.headers.host ?? 'localhost'}`);
-
-  if (url.pathname === WEBHOOK_PATH && request.method === 'GET') {
-    handleWebhookVerification(url, response);
-    return;
-  }
-  if (url.pathname === WEBHOOK_PATH && request.method === 'POST') {
-    handleWebhookEvent(request, response);
-    return;
-  }
-  response.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' }).end('cita-bot running');
-}).listen(env.port, () => {
+const app = buildApp();
+try {
+  // 0.0.0.0: reachable from outside the machine (Meta, tunnels, containers), like the previous server.
+  await app.listen({ port: env.port, host: '0.0.0.0' });
   console.log(`✅ cita-bot listening on port ${String(env.port)} · calendar: ${calendarName}`);
-});
+} catch (error) {
+  console.error('Failed to start the server', error);
+  process.exit(1);
+}
