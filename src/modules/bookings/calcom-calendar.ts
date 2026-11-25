@@ -6,6 +6,7 @@ import type { CalendarProvider } from './booking.service.js';
 const CALCOM_API_URL = 'https://api.cal.com/v2';
 const SLOTS_API_VERSION = '2024-09-04';
 const BOOKINGS_API_VERSION = '2026-02-25';
+const REQUEST_TIMEOUT_MS = 15_000;
 
 interface CalcomResponse<T> {
   data?: T;
@@ -34,6 +35,7 @@ async function requestCalcom<T>(
       'cal-api-version': apiVersion,
       'Content-Type': 'application/json',
     },
+    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
   });
   const body = (await response.json()) as CalcomResponse<T>;
   if (!response.ok) {

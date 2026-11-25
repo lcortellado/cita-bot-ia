@@ -1,15 +1,11 @@
 import { createHmac } from 'node:crypto';
-import type { IncomingMessage, ServerResponse } from 'node:http';
-import { Readable } from 'node:stream';
-import { describe, expect, it, vi } from 'vitest';
-import {
-  handleWebhookEvent,
-  handleWebhookVerification,
-  isValidSignature,
-} from './whatsapp.routes.js';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { FastifyInstance } from 'fastify';
+import { buildApp } from '../../app.js';
+import { isValidSignature } from './whatsapp.routes.js';
 import { handleIncomingMessage } from './whatsapp.service.js';
 
-// The webhook only parses and dispatches; message handling is tested in whatsapp.service.test.ts.
+// The webhook only verifies, parses and dispatches; message handling is tested in whatsapp.service.test.ts.
 vi.mock('./whatsapp.service.js', () => ({ handleIncomingMessage: vi.fn() }));
 
 // Values set in vitest.config.ts.
@@ -19,43 +15,21 @@ const VERIFY_TOKEN = 'test-verify-token';
 const sign = (body: string, secret = APP_SECRET) =>
   'sha256=' + createHmac('sha256', secret).update(body).digest('hex');
 
-/** Minimal ServerResponse that records what the handler sends. */
-function createResponse() {
-  let markFinished = (): void => undefined;
-  const finished = new Promise<void>((resolve) => {
-    markFinished = resolve;
-  });
-  const response = {
-    statusCode: 0,
-    body: '',
-    finished,
-    writeHead(statusCode: number) {
-      response.statusCode = statusCode;
-      return response;
-    },
-    end(body: unknown = '') {
-      response.body = String(body);
-      markFinished();
-      return response;
-    },
-  };
-  return response;
-}
-
-const asServerResponse = (response: ReturnType<typeof createResponse>) =>
-  response as unknown as ServerResponse;
-
-function createRequest(body: string, headers: Record<string, string> = {}): IncomingMessage {
-  return Object.assign(Readable.from([Buffer.from(body)]), {
-    headers,
-  }) as unknown as IncomingMessage;
-}
-
 const textMessage = (id: string) => ({
   id,
   from: '595981000001',
   type: 'text',
   text: { body: 'hola' },
+});
+
+let app: FastifyInstance;
+
+beforeEach(() => {
+  app = buildApp();
+});
+
+afterEach(async () => {
+  await app.close();
 });
 
 describe('isValidSignature', () => {
@@ -78,44 +52,40 @@ describe('isValidSignature', () => {
   });
 });
 
-describe('handleWebhookVerification', () => {
-  const verify = (query: string) => {
-    const response = createResponse();
-    handleWebhookVerification(
-      new URL(`http://localhost/webhook?${query}`),
-      asServerResponse(response),
-    );
-    return response;
-  };
+describe('GET /webhook (verification)', () => {
+  const verify = (query: Record<string, string>) =>
+    app.inject({ method: 'GET', url: '/webhook', query });
 
-  it('echoes the challenge when Meta sends the right token', () => {
-    const response = verify(
-      `hub.mode=subscribe&hub.verify_token=${VERIFY_TOKEN}&hub.challenge=123`,
-    );
+  it('echoes the challenge when Meta sends the right token', async () => {
+    const response = await verify({
+      'hub.mode': 'subscribe',
+      'hub.verify_token': VERIFY_TOKEN,
+      'hub.challenge': '123',
+    });
 
     expect(response.statusCode).toBe(200);
     expect(response.body).toBe('123');
   });
 
   it.each([
-    ['a wrong token', 'hub.mode=subscribe&hub.verify_token=wrong&hub.challenge=123'],
-    ['an empty token', 'hub.mode=subscribe&hub.verify_token=&hub.challenge=123'],
-    ['a wrong mode', `hub.mode=unsubscribe&hub.verify_token=${VERIFY_TOKEN}&hub.challenge=123`],
-  ])('rejects %s', (_case, query) => {
-    expect(verify(query).statusCode).toBe(403);
+    ['a wrong token', { 'hub.mode': 'subscribe', 'hub.verify_token': 'wrong' }],
+    ['an empty token', { 'hub.mode': 'subscribe', 'hub.verify_token': '' }],
+    ['a wrong mode', { 'hub.mode': 'unsubscribe', 'hub.verify_token': VERIFY_TOKEN }],
+  ])('rejects %s', async (_case, query) => {
+    const response = await verify({ ...query, 'hub.challenge': '123' });
+
+    expect(response.statusCode).toBe(403);
   });
 });
 
-describe('handleWebhookEvent', () => {
-  async function postWebhook(body: string, signature = sign(body)) {
-    const response = createResponse();
-    handleWebhookEvent(
-      createRequest(body, { 'x-hub-signature-256': signature }),
-      asServerResponse(response),
-    );
-    await response.finished;
-    return response;
-  }
+describe('POST /webhook (events)', () => {
+  const postWebhook = (body: string, signature = sign(body)) =>
+    app.inject({
+      method: 'POST',
+      url: '/webhook',
+      payload: body,
+      headers: { 'content-type': 'application/json', 'x-hub-signature-256': signature },
+    });
 
   it('answers 200 and dispatches every message in the payload', async () => {
     const body = JSON.stringify({
@@ -133,6 +103,13 @@ describe('handleWebhookEvent', () => {
       'm2',
       'm3',
     ]);
+  });
+
+  it('verifies the signature over the raw bytes, not re-serialized JSON', async () => {
+    // Spacing and key order that JSON.stringify would not reproduce.
+    const body = '{ "entry" : [ { "changes": [ { "value": { "messages": [] } } ] } ] }';
+
+    expect((await postWebhook(body)).statusCode).toBe(200);
   });
 
   it('answers 401 and dispatches nothing when the signature is invalid', async () => {
@@ -154,5 +131,21 @@ describe('handleWebhookEvent', () => {
     expect((await postWebhook(statusOnly)).statusCode).toBe(200);
     expect((await postWebhook('{not json')).statusCode).toBe(200);
     expect(handleIncomingMessage).not.toHaveBeenCalled();
+  });
+
+  it('rejects payloads larger than 1 MiB', async () => {
+    const body = JSON.stringify({ padding: 'x'.repeat(1_048_576) });
+
+    expect((await postWebhook(body)).statusCode).toBe(413);
+    expect(handleIncomingMessage).not.toHaveBeenCalled();
+  });
+});
+
+describe('GET /', () => {
+  it('answers a health check', async () => {
+    const response = await app.inject({ method: 'GET', url: '/' });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.body).toBe('cita-bot running');
   });
 });

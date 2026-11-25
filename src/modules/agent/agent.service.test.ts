@@ -74,6 +74,7 @@ describe('generateReply', () => {
       role: 'user',
       content: '¿cuánto cuesta el brushing?',
     });
+    expect(fetchMock.mock.calls[0]?.[1]?.signal).toBeInstanceOf(AbortSignal);
   });
 
   it('sends the conversation history between the system prompt and the new message', async () => {

@@ -3,6 +3,8 @@ import { env } from '../../shared/config/env.js';
 const OPENROUTER_CHAT_URL = 'https://openrouter.ai/api/v1/chat/completions';
 const APP_TITLE = 'Agente WhatsApp';
 const TEMPERATURE = 0.3;
+// A slow model must not block the customer's queue forever.
+const REQUEST_TIMEOUT_MS = 30_000;
 
 export interface ToolCall {
   id: string;
@@ -51,6 +53,7 @@ export async function requestChatCompletion(
       tools,
       temperature: TEMPERATURE,
     }),
+    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
   });
   const data = (await response.json()) as ChatCompletionResponse;
   if (!response.ok) {

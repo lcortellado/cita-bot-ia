@@ -11,6 +11,7 @@ vi.mock('../conversations/conversation.service.js', () => ({
 
 interface GraphRequest {
   url: string;
+  hasTimeout: boolean;
   authorization: string;
   payload: Record<string, unknown>;
 }
@@ -25,6 +26,7 @@ beforeEach(() => {
       const headers = new Headers(init?.headers);
       graphRequests.push({
         url: url as string,
+        hasTimeout: init?.signal instanceof AbortSignal,
         authorization: headers.get('Authorization') ?? '',
         payload: JSON.parse(init?.body as string) as Record<string, unknown>,
       });
@@ -72,6 +74,7 @@ describe('handleIncomingMessage', () => {
       'https://graph.facebook.com/v25.0/test-phone-number-id/messages',
     );
     expect(graphRequests[1]?.authorization).toBe('Bearer test-whatsapp-token');
+    expect(graphRequests.every((request) => request.hasTimeout)).toBe(true);
   });
 
   it('handles a message delivered twice only once', async () => {

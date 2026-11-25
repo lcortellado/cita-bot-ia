@@ -4,6 +4,7 @@ import { runInConversationQueue } from '../conversations/conversation.service.js
 
 const NON_TEXT_REPLY = 'Por ahora solo puedo leer mensajes de texto. ¿Me escribes? 🙂';
 const MAX_TRACKED_MESSAGE_IDS = 5000;
+const GRAPH_TIMEOUT_MS = 10_000;
 
 export interface WhatsAppMessage {
   id: string;
@@ -19,6 +20,7 @@ async function sendGraphRequest(payload: Record<string, unknown>): Promise<void>
     method: 'POST',
     headers: { Authorization: `Bearer ${env.whatsapp.token}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({ messaging_product: 'whatsapp', ...payload }),
+    signal: AbortSignal.timeout(GRAPH_TIMEOUT_MS),
   });
   if (!response.ok) console.error('WhatsApp', response.status, await response.text());
 }

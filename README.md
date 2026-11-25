@@ -4,11 +4,11 @@ WhatsApp AI agent that answers customers and books appointments, using OpenRoute
 
 ## Requirements
 
-Node.js 22 or later.
+Node.js 22 or later (`nvm use` reads `.nvmrc`) and [Yarn](https://classic.yarnpkg.com/).
 
 ## Setup
 
-1. `npm install`
+1. `yarn install`
 2. Copy `.env.example` to `.env` and fill it in. The simulator only needs `OPENROUTER_API_KEY`.
 3. Edit `business-profile.md` with the business data. The agent only answers with what this file says.
 
@@ -16,16 +16,16 @@ Without `CAL_API_KEY`, bookings go to an in-memory demo calendar.
 
 ## Scripts
 
-| Command                      | What it does                                          |
-| ---------------------------- | ----------------------------------------------------- |
-| `npm run simulate`           | Chat with the agent in the terminal, without WhatsApp |
-| `npm run eval`               | Live evaluation against the real model (costs tokens) |
-| `npm run dev`                | Webhook server with reload on changes                 |
-| `npm run build && npm start` | Compile to `dist/` and start the webhook server       |
-| `npm test`                   | Unit tests (Vitest)                                   |
-| `npm run typecheck`          | TypeScript type check                                 |
-| `npm run lint`               | ESLint                                                |
-| `npm run format:check`       | Prettier check (`npm run format` to fix)              |
+| Command                    | What it does                                          |
+| -------------------------- | ----------------------------------------------------- |
+| `yarn simulate`            | Chat with the agent in the terminal, without WhatsApp |
+| `yarn eval`                | Live evaluation against the real model (costs tokens) |
+| `yarn dev`                 | Webhook server with reload on changes                 |
+| `yarn build && yarn start` | Compile to `dist/` and start the webhook server       |
+| `yarn test`                | Unit tests (Vitest)                                   |
+| `yarn typecheck`           | TypeScript type check                                 |
+| `yarn lint`                | ESLint                                                |
+| `yarn format:check`        | Prettier check (`yarn format` to fix)                 |
 
 ## Structure
 
